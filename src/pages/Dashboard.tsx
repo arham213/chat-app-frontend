@@ -292,7 +292,7 @@ const Dashboard = () => {
 
     useEffect(() => {
         console.log("New message changed:", newMessage);
-        if (newMessage.trim() === "") return;
+        if (!selectedChat || newMessage.trim() === "") return;
 
         const typingTimeout = setTimeout(() => {
             sendTypingEvent(selectedChat._id, false);
@@ -303,7 +303,8 @@ const Dashboard = () => {
         return () => {
             clearTimeout(typingTimeout);
         }
-    }, [newMessage, selectedChat._id]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [newMessage, selectedChat?._id]);
 
     useEffect(() => {
         const handleReceiveMessage = (data: any) => {
