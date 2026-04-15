@@ -303,7 +303,7 @@ const Dashboard = () => {
         return () => {
             clearTimeout(typingTimeout);
         }
-    }, [newMessage]);
+    }, [newMessage, selectedChat._id]);
 
     useEffect(() => {
         const handleReceiveMessage = (data: any) => {
@@ -443,7 +443,7 @@ const Dashboard = () => {
             socket.off('message_read', handleMessageRead);
             socket.off('user_status', handleUserStatusUpdated);
         }
-    }, [socket])
+    }, [])
 
 
 
@@ -460,7 +460,7 @@ const Dashboard = () => {
         } else {
             setFilteredChats(chats);
         }
-    }, [searchString]);
+    }, [searchString, chats]);
 
     useEffect(() => {
         const user = JSON.parse(localStorage.getItem('user') || '{}');
