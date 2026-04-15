@@ -13,7 +13,6 @@ const Dashboard = () => {
     const [searchString, setSearchString] = useState<any>("");
     const [newChatMode, setNewChatMode] = useState<Boolean>(false);
     const [selectedChat, setSelectedChat] = useState<any>(null);
-    const [selectedParticipantStatus, setSelectedParticpantStatus] = useState<Boolean>(false);
     const selectedChatRef = useRef(selectedChat);
     const [newMessage, setNewMessage] = useState<string>("");
     const [selectedImage, setSelectedImage] = useState<File | null>(null);
@@ -124,13 +123,12 @@ const Dashboard = () => {
                             key={chat._id}
                             onClick={() => handleStartExistingChat(chat)}
                         >
-                            <div className={styles.chatAvatar}>
+                            <div className={`${styles.chatAvatar} ${otherParticipant?.online ? styles.isOnline : ''}`}>
                                 {otherParticipant?.username?.charAt(0) || '?'}
                             </div>
                             <div className={styles.chatInfo}>
                                 <div className={styles.chatHeader}>
                                     <span className={styles.personName}>{otherParticipant?.username}</span>
-                                    <span>{otherParticipant?.online ? 'online' : 'offline'}</span>
                                     <span className={styles.lastMessageTime}>{formatTime(chat?.lastMessage?.createdAt)}</span>
                                 </div>
                                 <span className={styles.lastMessage}>
@@ -147,7 +145,9 @@ const Dashboard = () => {
                     );
                 }) : (
                     <div className={styles.emptyState}>
-                        <div className={styles.emptyStateIcon}>💬</div>
+                        <svg className={styles.emptyStateIcon} viewBox="0 0 24 24" width="48" height="48" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                        </svg>
                         <span className={styles.emptyStateText}>No chats yet. Start a new conversation!</span>
                     </div>
                 )}
@@ -159,7 +159,12 @@ const Dashboard = () => {
         return (
             <>
                 <div className={styles.newChatHeader}>
-                    <button className={styles.backBtn} onClick={handleNewChatMode}>←</button>
+                    <button className={styles.backBtn} onClick={handleNewChatMode}>
+                        <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                            <line x1="19" y1="12" x2="5" y2="12"></line>
+                            <polyline points="12 19 5 12 12 5"></polyline>
+                        </svg>
+                    </button>
                     <span className={styles.newChatTitle}>New chat</span>
                 </div>
                 <div className={styles.usersList}>
@@ -172,7 +177,12 @@ const Dashboard = () => {
                         </div>
                     )) : (
                         <div className={styles.emptyState}>
-                            <div className={styles.emptyStateIcon}>👥</div>
+                            <svg className={styles.emptyStateIcon} viewBox="0 0 24 24" width="48" height="48" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="9" cy="7" r="4"></circle>
+                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                            </svg>
                             <span className={styles.emptyStateText}>No users found</span>
                         </div>
                     )}
@@ -481,12 +491,18 @@ const Dashboard = () => {
                             </div>
                             <div className={styles.headerActions}>
                                 <button className={`${styles.iconBtn} ${styles.newChatBtn}`} onClick={handleNewChatMode} title="New chat">
-                                    +
+                                    <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                                    </svg>
                                 </button>
                             </div>
                         </div>
                         <div className={styles.searchContainer}>
-                            <span className={styles.searchIcon}>🔍</span>
+                            <svg className={styles.searchIcon} viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                            </svg>
                             <input
                                 type="search"
                                 className={styles.searchInput}
@@ -511,19 +527,34 @@ const Dashboard = () => {
                     {/* Chat Header */}
                     <div className={styles.chatHeader}>
                         <div className={styles.chatHeaderLeft}>
-                            <div className={styles.chatHeaderAvatar}>
+                            <div className={`${styles.chatHeaderAvatar} ${getOtherParticipant(selectedChat)?.online ? styles.isOnline : ''}`}>
                                 {getOtherParticipant(selectedChat)?.username?.charAt(0) || '?'}
                             </div>
                             <div className={styles.chatHeaderInfo}>
                                 <span className={styles.participantName}>
                                     {getOtherParticipant(selectedChat)?.username}
                                 </span>
-                                <span className={styles.onlineStatus}>{getOtherParticipant(selectedChat)?.online ? 'online' : `last seen at ${formatTime(getOtherParticipant(selectedChat)?.lastSeen)}`}</span>
+                                {getOtherParticipant(selectedChat)?.online ? (
+                                    <span className={styles.onlineStatus}>Active now</span>
+                                ) : getOtherParticipant(selectedChat)?.lastSeen ? (
+                                    <span className={styles.onlineStatus}>last seen at {formatTime(getOtherParticipant(selectedChat)?.lastSeen)}</span>
+                                ) : null}
                             </div>
                         </div>
                         <div className={styles.chatHeaderActions}>
-                            <button className={styles.iconBtn} title="Search">🔍</button>
-                            <button className={styles.iconBtn} title="More options">⋮</button>
+                            <button className={styles.iconBtn} title="Search">
+                                <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                                    <circle cx="11" cy="11" r="8"></circle>
+                                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                </svg>
+                            </button>
+                            <button className={styles.iconBtn} title="More options">
+                                <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                                    <circle cx="12" cy="12" r="1"></circle>
+                                    <circle cx="12" cy="5" r="1"></circle>
+                                    <circle cx="12" cy="19" r="1"></circle>
+                                </svg>
+                            </button>
                         </div>
                     </div>
 
@@ -566,7 +597,9 @@ const Dashboard = () => {
                         <div className={styles.inputArea}>
                             <div className={styles.inputActions}>
                                 <label className={styles.attachBtn} title="Attach image">
-                                    📎
+                                    <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+                                    </svg>
                                     <input
                                         type="file"
                                         accept="image/*"
@@ -593,7 +626,10 @@ const Dashboard = () => {
                                 disabled={!newMessage.trim()}
                                 title="Send message"
                             >
-                                ➤
+                                <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round" style={{ transform: 'translateX(2px)' }}>
+                                    <line x1="22" y1="2" x2="11" y2="13"></line>
+                                    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                                </svg>
                             </button>
                         </div>
                     )}
@@ -601,14 +637,19 @@ const Dashboard = () => {
             ) : (
                 <div className={styles.rightPanel}>
                     <div className={styles.welcomeScreen}>
-                        <svg className={styles.welcomeIcon} viewBox="0 0 303 172" width="360" height="200">
-                            <path fill="#00a884" d="M229.565 160.229c32.647-29.527 53.218-72.317 53.218-119.869C282.783 18.075 264.708 0 242.423 0c-22.285 0-40.36 18.075-40.36 40.36 0 22.285 18.075 40.36 40.36 40.36 6.12 0 11.921-1.367 17.122-3.815-8.658 32.714-29.025 61.095-56.48 79.324zM60.134 81.161c22.285 0 40.36-18.075 40.36-40.36C100.494 18.516 82.419.441 60.134.441c-22.285 0-40.36 18.075-40.36 40.36 0 22.285 18.075 40.36 40.36 40.36z" />
-                            <path fill="#364147" d="M230.063 160.727c-42.466 12.392-89.951 1.661-123.377-32.765-52.089-53.685-50.678-139.319 3.155-191.26 26.296-25.392 60.86-38.283 95.384-38.614-14.076-.251-28.192 1.809-41.843 6.205-45.147 14.55-79.122 53.476-86.74 101.106a132.867 132.867 0 0 0 8.095 67.837c12.023 31.472 35.907 58.02 67.668 72.847 31.761 14.828 67.32 17.048 100.563 6.282z" />
+                        <svg className={styles.welcomeIcon} viewBox="0 0 24 24" stroke="url(#icon-gradient)" strokeWidth="1" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                            <defs>
+                                <linearGradient id="icon-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" stopColor="#10b981" />
+                                    <stop offset="100%" stopColor="#3b82f6" />
+                                </linearGradient>
+                            </defs>
+                            <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
                         </svg>
-                        <h1 className={styles.welcomeTitle}>WhatsApp Web</h1>
+                        <h1 className={styles.welcomeTitle}>Connect Seamlessly</h1>
                         <p className={styles.welcomeText}>
-                            Send and receive messages without keeping your phone online.<br />
-                            Use WhatsApp on up to 4 linked devices and 1 phone at the same time.
+                            Experience blazing fast, secure messaging across all your devices.<br />
+                            Select a chat to start talking.
                         </p>
                     </div>
                 </div>
