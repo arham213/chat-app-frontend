@@ -66,7 +66,6 @@ npm start
 See the [backend README](https://github.com/arham213/chat-app-backend#readme) for full backend setup instructions.
 
 ---
-
 ## Author
 
 [LinkedIn](https://linkedin.com/in/arhamasjid) · arhamasjid213@gmail.com
