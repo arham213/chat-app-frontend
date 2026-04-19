@@ -7,7 +7,7 @@
 
 Frontend for a real-time chat system built with React and Socket.IO. Manages WebSocket lifecycle, presence state, and media sharing alongside a persistent message history.
 
-**Live:** [chat-app-frontend-beta-three.vercel.app](https://chat-app-frontend-beta-three.vercel.app) &nbsp;|&nbsp; **Backend:** [chat-app-backend-dummy.up.railway.app](https://chat-app-backend-dummy.up.railway.app) ([repo](https://github.com/arham213/chat-app-backend))
+**Live:** [chat-app-frontend-beta-three.vercel.app](https://chat-app-frontend-beta-three.vercel.app) &nbsp;|&nbsp; **Backend:** [chat-app-backend](https://github.com/arham213/chat-app-backend)
 
 ---
 
