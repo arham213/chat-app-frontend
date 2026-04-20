@@ -1,14 +1,238 @@
-.signupPage, .signinPage {
+/* Auth Pages - Premium Glassmorphism Design (matches dashboard design system) */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+
+/* Full-page animated background (same gradient as dashboard) */
+.authPage {
+    min-height: 100vh;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(-45deg, #0f172a, #1e1b4b, #064e3b, #111827);
+    background-size: 400% 400%;
+    animation: gradientBG 15s ease infinite;
+    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+    padding: 24px;
+    box-sizing: border-box;
+}
+
+@keyframes gradientBG {
+    0%   { background-position: 0% 50%; }
+    50%  { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* Glass card */
+.authCard {
+    width: 100%;
+    max-width: 420px;
+    background: rgba(15, 23, 42, 0.65);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: 28px;
+    padding: 44px 40px;
+    box-shadow: 0 8px 40px 0 rgba(0, 0, 0, 0.45);
+    box-sizing: border-box;
+    animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Brand logo area */
+.brandArea {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    height: 100vh;
-    gap: 10px;
+    gap: 12px;
+    margin-bottom: 36px;
 }
 
-.signupForm, .signinForm {
+.brandIcon {
+    width: 60px;
+    height: 60px;
+    border-radius: 18px;
+    background: linear-gradient(135deg, #10b981 0%, #3b82f6 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 6px 24px rgba(16, 185, 129, 0.35);
+}
+
+.brandIcon svg {
+    color: white;
+}
+
+.brandName {
+    font-size: 22px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #10b981, #3b82f6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: -0.3px;
+}
+
+.pageTitle {
+    font-size: 26px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.95);
+    margin: 0 0 6px;
+    letter-spacing: -0.4px;
+}
+
+.pageSubtitle {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.45);
+    margin: 0 0 32px;
+}
+
+/* Form */
+.authForm {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 16px;
+}
+
+.fieldGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.fieldLabel {
+    font-size: 13px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.55);
+    letter-spacing: 0.2px;
+}
+
+.fieldInput {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: 14px;
+    padding: 13px 16px;
+    font-family: 'Outfit', sans-serif;
+    font-size: 15px;
+    color: white;
+    outline: none;
+    box-sizing: border-box;
+    transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.fieldInput::placeholder {
+    color: rgba(255, 255, 255, 0.25);
+}
+
+.fieldInput:focus {
+    border-color: rgba(16, 185, 129, 0.6);
+    background: rgba(255, 255, 255, 0.09);
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.12);
+}
+
+.fieldInput:-webkit-autofill,
+.fieldInput:-webkit-autofill:hover,
+.fieldInput:-webkit-autofill:focus {
+    -webkit-box-shadow: 0 0 0px 1000px rgba(15, 23, 42, 0.9) inset;
+    -webkit-text-fill-color: white;
+    caret-color: white;
+}
+
+/* Submit button */
+.submitBtn {
+    width: 100%;
+    padding: 14px;
+    margin-top: 6px;
+    background: linear-gradient(135deg, #10b981 0%, #3b82f6 100%);
+    border: none;
+    border-radius: 14px;
+    font-family: 'Outfit', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    color: white;
+    cursor: pointer;
+    letter-spacing: 0.2px;
+    transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
+    box-shadow: 0 4px 20px rgba(16, 185, 129, 0.3);
+}
+
+.submitBtn:hover:not(:disabled) {
+    opacity: 0.9;
+    transform: translateY(-1px);
+    box-shadow: 0 8px 28px rgba(16, 185, 129, 0.4);
+}
+
+.submitBtn:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+.submitBtn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+/* Link row */
+.linkRow {
+    text-align: center;
+    margin-top: 24px;
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.linkRow a {
+    color: #10b981;
+    text-decoration: none;
+    font-weight: 500;
+    margin-left: 4px;
+    transition: color 0.2s;
+}
+
+.linkRow a:hover {
+    color: #34d399;
+}
+
+/* Error / success banner */
+.errorBanner {
+    padding: 11px 14px;
+    background: rgba(239, 68, 68, 0.15);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: 12px;
+    font-size: 13.5px;
+    color: #fca5a5;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.successBanner {
+    padding: 11px 14px;
+    background: rgba(16, 185, 129, 0.12);
+    border: 1px solid rgba(16, 185, 129, 0.25);
+    border-radius: 12px;
+    font-size: 13.5px;
+    color: #6ee7b7;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Loading spinner in button */
+.spinner {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    vertical-align: middle;
+    margin-right: 8px;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
 }
