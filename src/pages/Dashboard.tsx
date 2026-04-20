@@ -1,9 +1,12 @@
 import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { createChat, getAllUsers, getChatMessages, getChats, uploadChatImage } from "../services/dashboardService";
 import socket, { connectSocket, disconnectSocket, joinChat, markMessagesAsRead, sendMessage, sendTypingEvent } from "../services/socketService";
+import { deleteUser, getUser } from "../utils/localStorage";
 import styles from "../assets/styles/dashboard.module.css";
 
 const Dashboard = () => {
+    const navigate = useNavigate();
     const [chats, setChats] = useState<Array<any>>([]);
     const [messages, setMessages] = useState<Array<any>>([]);
     const [loadingChats, setLoadingChats] = useState<Boolean>(false);
@@ -17,20 +20,31 @@ const Dashboard = () => {
     const [newMessage, setNewMessage] = useState<string>("");
     const [selectedImage, setSelectedImage] = useState<File | null>(null);
     const [typingUser, setTypingUser] = useState<any>(null);
+    const messagesEndRef = useRef<HTMLDivElement>(null);
+    const [isChatSearching, setIsChatSearching] = useState(false);
+    const [chatSearchString, setChatSearchString] = useState("");
 
-    const getUserChats = async () => {
+    const scrollToBottom = () => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    };
+
+    useEffect(() => {
+        scrollToBottom();
+    }, [messages]);
+
+    const getUserChats = async (silent = false) => {
         try {
-            setLoadingChats(true);
+            if (!silent) setLoadingChats(true);
             const response = await getChats();
             if (response) {
                 setChats(response.chats);
-                setFilteredChats(response.chats);
+                // setFilteredChats is handled by the useEffect watching 'chats'
             }
         } catch (error) {
             console.error("Failed to fetch chats:", error);
-            window.alert("Failed to load chats. Please try again.");
+            if (!silent) window.alert("Failed to load chats. Please try again.");
         } finally {
-            setLoadingChats(false);
+            if (!silent) setLoadingChats(false);
         }
     }
 
@@ -95,14 +109,20 @@ const Dashboard = () => {
 
     const getOtherParticipant = (chat: any) => {
         if (!chat) return null;
-        const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+        const currentUser = getUser();
         return chat?.participants[0]?.username === currentUser?.username
             ? chat.participants[1]
             : chat.participants[0];
     }
 
     const getCurrentUserId = () => {
-        return JSON.parse(localStorage.getItem('user') || '{}')?.id;
+        return getUser()?.id;
+    }
+
+    const handleLogout = () => {
+        disconnectSocket();
+        deleteUser();
+        navigate('/');
     }
 
     const formatTime = (timestamp: string) => {
@@ -111,7 +131,7 @@ const Dashboard = () => {
         return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
     }
 
-    const Chats = () => {
+    const renderChats = () => {
         return (
             <div className={styles.chatsList}>
                 {!!filteredChats && filteredChats.length > 0 ? filteredChats.map((chat) => {
@@ -155,7 +175,7 @@ const Dashboard = () => {
         )
     }
 
-    const Users = () => {
+    const renderUsers = () => {
         return (
             <>
                 <div className={styles.newChatHeader}>
@@ -191,7 +211,11 @@ const Dashboard = () => {
         )
     }
 
-    const Messages = () => {
+    const renderMessages = () => {
+        const displayedMessages = chatSearchString.trim() !== "" 
+            ? messages.filter(m => m.type === 'text' && m.content?.toLowerCase().includes(chatSearchString.toLowerCase()))
+            : messages;
+
         return (
             <div className={styles.chatMessages}>
                 {loadingChat ? (
@@ -200,7 +224,7 @@ const Dashboard = () => {
                         <span>Loading messages...</span>
                     </div>
                 ) : (
-                    messages?.map((message) => {
+                    displayedMessages?.map((message) => {
                         const isOwnMessage = message?.sender?._id === getCurrentUserId();
                         return (
                             <div
@@ -226,6 +250,7 @@ const Dashboard = () => {
                         );
                     })
                 )}
+                <div ref={messagesEndRef} />
             </div>
         )
     }
@@ -245,6 +270,7 @@ const Dashboard = () => {
             createdAt: new Date().toISOString()
         }])
         setNewMessage("");
+        getUserChats(true);
     }
 
     const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -277,10 +303,11 @@ const Dashboard = () => {
                 },
                 content: response?.imageUrl,
                 type: 'image',
-                read: true,
+                read: false,
                 createdAt: new Date().toISOString()
             }])
             setSelectedImage(null);
+            getUserChats(true);
         }
     }
 
@@ -288,6 +315,10 @@ const Dashboard = () => {
         selectedChatRef.current = selectedChat;
         console.log(selectedChat);
         console.log('selected chat:', selectedChatRef.current);
+        
+        // Reset search state when switching chats
+        setIsChatSearching(false);
+        setChatSearchString("");
     }, [selectedChat])
 
     useEffect(() => {
@@ -309,13 +340,29 @@ const Dashboard = () => {
     useEffect(() => {
         const handleReceiveMessage = (data: any) => {
             console.log("Message received:", data)
-            setMessages((list) => [...list, data?.message])
+            const newMessage = data?.message || data; // Fallback in case data is the message directly
+            if (!newMessage) return;
+
+            const currentChat = selectedChatRef.current;
+            if (currentChat && currentChat._id === (newMessage.chat?._id || newMessage.chat)) {
+                setMessages((list) => [...list, newMessage]);
+            }
+            
+            // Silently refresh chat list so the new message appears in the left panel
+            getUserChats(true);
             setTypingUser(null);
         }
 
         const handleRecieveTypingEvent = (data: any) => {
             console.log("Typing event received:", data)
-            setTypingUser(data);
+            // Only show typing for OTHER users — never echo our own typing back
+            const currentUserId = getUser()?.id;
+            if (data?.userId && data.userId === currentUserId) return;
+            if (data?.isTyping === false) {
+                setTypingUser(null);
+            } else {
+                setTypingUser(data);
+            }
         }
 
         const handleMessagesRead = (data: any) => {
@@ -362,7 +409,7 @@ const Dashboard = () => {
             console.log('User Status Updated event recieved:', data);
 
 
-            const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+            const currentUser = getUser();
 
             setChats((prevChats) => {
                 return prevChats.map((prevChat) => {
@@ -456,7 +503,11 @@ const Dashboard = () => {
 
     useEffect(() => {
         if (searchString.trim() !== "") {
-            const filteredChats = chats.filter(chat => chat.name.toLowerCase().includes(searchString.toLowerCase()));
+            const filteredChats = chats.filter(chat => {
+                const otherParticipant = getOtherParticipant(chat);
+                const nameToSearch = chat.name || otherParticipant?.username || "";
+                return nameToSearch.toLowerCase().includes(searchString.toLowerCase());
+            });
             setFilteredChats(filteredChats);
         } else {
             setFilteredChats(chats);
@@ -464,7 +515,7 @@ const Dashboard = () => {
     }, [searchString, chats]);
 
     useEffect(() => {
-        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        const user = getUser();
 
         if (user) {
             connectSocket(user);
@@ -486,7 +537,7 @@ const Dashboard = () => {
                         <div className={styles.topHeader}>
                             <div className={styles.profileSection}>
                                 <div className={styles.profileAvatar}>
-                                    {JSON.parse(localStorage.getItem('user') || '{}')?.username?.charAt(0) || 'U'}
+                                    {getUser()?.username?.charAt(0) || 'U'}
                                 </div>
                                 <span className={styles.heading}>Chats</span>
                             </div>
@@ -495,6 +546,13 @@ const Dashboard = () => {
                                     <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round">
                                         <line x1="12" y1="5" x2="12" y2="19"></line>
                                         <line x1="5" y1="12" x2="19" y2="12"></line>
+                                    </svg>
+                                </button>
+                                <button className={`${styles.iconBtn} ${styles.logoutBtn}`} onClick={handleLogout} title="Logout">
+                                    <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                                        <polyline points="16 17 21 12 16 7"></polyline>
+                                        <line x1="21" y1="12" x2="9" y2="12"></line>
                                     </svg>
                                 </button>
                             </div>
@@ -519,7 +577,7 @@ const Dashboard = () => {
                         <div className={styles.loadingSpinner}></div>
                         <span>Loading chats...</span>
                     </div>
-                ) : newChatMode ? <Users /> : <Chats />}
+                ) : newChatMode ? renderUsers() : renderChats()}
             </div>
 
             {/* Right Panel - Chat Area */}
@@ -531,23 +589,54 @@ const Dashboard = () => {
                             <div className={`${styles.chatHeaderAvatar} ${getOtherParticipant(selectedChat)?.online ? styles.isOnline : ''}`}>
                                 {getOtherParticipant(selectedChat)?.username?.charAt(0) || '?'}
                             </div>
-                            <div className={styles.chatHeaderInfo}>
-                                <span className={styles.participantName}>
-                                    {getOtherParticipant(selectedChat)?.username}
-                                </span>
-                                {getOtherParticipant(selectedChat)?.online ? (
-                                    <span className={styles.onlineStatus}>Active now</span>
-                                ) : getOtherParticipant(selectedChat)?.lastSeen ? (
-                                    <span className={styles.onlineStatus}>last seen at {formatTime(getOtherParticipant(selectedChat)?.lastSeen)}</span>
-                                ) : null}
-                            </div>
+                            {isChatSearching ? (
+                                <div className={styles.searchContainer} style={{ flex: 1, marginLeft: '12px', marginBottom: 0 }}>
+                                    <svg className={styles.searchIcon} viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                                        <circle cx="11" cy="11" r="8"></circle>
+                                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                    </svg>
+                                    <input
+                                        type="search"
+                                        className={styles.searchInput}
+                                        value={chatSearchString}
+                                        placeholder="Search in chat..."
+                                        onChange={(e) => setChatSearchString(e.target.value)}
+                                        autoFocus
+                                    />
+                                </div>
+                            ) : (
+                                <div className={styles.chatHeaderInfo}>
+                                    <span className={styles.participantName}>
+                                        {getOtherParticipant(selectedChat)?.username}
+                                    </span>
+                                    {getOtherParticipant(selectedChat)?.online ? (
+                                        <span className={styles.onlineStatus}>Active now</span>
+                                    ) : getOtherParticipant(selectedChat)?.lastSeen ? (
+                                        <span className={styles.onlineStatus}>last seen at {formatTime(getOtherParticipant(selectedChat)?.lastSeen)}</span>
+                                    ) : null}
+                                </div>
+                            )}
                         </div>
                         <div className={styles.chatHeaderActions}>
-                            <button className={styles.iconBtn} title="Search">
-                                <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round">
-                                    <circle cx="11" cy="11" r="8"></circle>
-                                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                                </svg>
+                            <button 
+                                className={styles.iconBtn} 
+                                title={isChatSearching ? "Close Search" : "Search"}
+                                onClick={() => {
+                                    setIsChatSearching(!isChatSearching);
+                                    if (isChatSearching) setChatSearchString("");
+                                }}
+                            >
+                                {isChatSearching ? (
+                                    <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                                    </svg>
+                                ) : (
+                                    <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                                        <circle cx="11" cy="11" r="8"></circle>
+                                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                    </svg>
+                                )}
                             </button>
                             <button className={styles.iconBtn} title="More options">
                                 <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round">
@@ -560,9 +649,9 @@ const Dashboard = () => {
                     </div>
 
                     {/* Messages Area */}
-                    <Messages />
+                    {renderMessages()}
 
-                    {typingUser && typingUser.isTyping && typingUser.userId !== getCurrentUserId() && (
+                    {typingUser && typingUser.isTyping && (
                         <div className={styles.typingIndicator}>{typingUser.username} is typing...</div>
                     )}
 

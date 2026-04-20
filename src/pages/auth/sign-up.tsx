@@ -1,13 +1,15 @@
 import { useState } from "react"
+import { Link, useNavigate } from "react-router-dom";
 import { SignUpData } from "../../types/auth";
 import { registerUser } from "../../services/authService";
 import { saveUser } from "../../utils/localStorage";
-import { useNavigate } from "react-router-dom";
 import styles from '../../assets/styles/auth.module.css';
 
 export const Signup = () => {
     const navigate = useNavigate();
-    const [loading, setLoading] = useState<Boolean>(false);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [success, setSuccess] = useState<string | null>(null);
     const [formState, setFormState] = useState<SignUpData>({
         username: "",
         email: "",
@@ -16,46 +18,137 @@ export const Signup = () => {
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
-        setFormState({
-            ...formState,
-            [name]: value
-        })
+        setError(null);
+        setFormState({ ...formState, [name]: value })
     }
 
-    const handleSignup = async () => {
+    const handleSignup = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!formState.username || !formState.email || !formState.password) {
+            setError("Please fill in all fields.");
+            return;
+        }
+        if (formState.password.length < 6) {
+            setError("Password must be at least 6 characters.");
+            return;
+        }
         try {
             setLoading(true);
-
+            setError(null);
             const response = await registerUser(formState);
-            console.log("Signup response:", response);
             if (response) {
-                window.alert('Signup successful! Please sign in.');
+                setSuccess("Account created! Redirecting...");
                 saveUser({
                     id: response.user.id,
                     username: response.user.username,
                     email: response.user.email,
                     token: response.token
                 })
-                navigate('/');
+                setTimeout(() => navigate('/'), 1200);
             }
-        } catch (error) {
-            console.error("Signup failed:", error);
-            window.alert("Signup failed. Please try again.");
+        } catch (err: any) {
+            console.error("Signup failed:", err);
+            setError(err?.response?.data?.message || "Signup failed. Please try again.");
         } finally {
             setLoading(false);
         }
     }
 
     return (
-        <div className={styles.signupPage}>
-            <h1 className="page-heading">Sign Up</h1>
-            <form action={handleSignup} className={styles.signupForm}>
-                <input type="text" value={formState.username} name="username" placeholder="username" onChange={handleInputChange} />
-                <input type="email" value={formState.email} name="email" placeholder="email" onChange={handleInputChange} />
-                <input type="text" value={formState.password} name="password" placeholder="password" onChange={handleInputChange} />
+        <div className={styles.authPage}>
+            <div className={styles.authCard}>
+                {/* Brand */}
+                <div className={styles.brandArea}>
+                    <div className={styles.brandIcon}>
+                        <svg viewBox="0 0 24 24" width="30" height="30" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                        </svg>
+                    </div>
+                    <span className={styles.brandName}>ChatApp</span>
+                </div>
 
-                <button type="submit">{loading ? 'Signing Up...' : 'Sign Up'}</button>
-            </form>
+                <h1 className={styles.pageTitle}>Create account</h1>
+                <p className={styles.pageSubtitle}>Join and start messaging instantly</p>
+
+                {/* Banners */}
+                {error && (
+                    <div className={styles.errorBanner}>
+                        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="8" x2="12" y2="12"></line>
+                            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                        </svg>
+                        {error}
+                    </div>
+                )}
+                {success && (
+                    <div className={styles.successBanner}>
+                        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                        {success}
+                    </div>
+                )}
+
+                <form onSubmit={handleSignup} className={styles.authForm}>
+                    <div className={styles.fieldGroup}>
+                        <label className={styles.fieldLabel}>Username</label>
+                        <input
+                            id="signup-username"
+                            type="text"
+                            name="username"
+                            value={formState.username}
+                            placeholder="your_username"
+                            onChange={handleInputChange}
+                            className={styles.fieldInput}
+                            autoComplete="username"
+                        />
+                    </div>
+
+                    <div className={styles.fieldGroup}>
+                        <label className={styles.fieldLabel}>Email address</label>
+                        <input
+                            id="signup-email"
+                            type="email"
+                            name="email"
+                            value={formState.email}
+                            placeholder="you@example.com"
+                            onChange={handleInputChange}
+                            className={styles.fieldInput}
+                            autoComplete="email"
+                        />
+                    </div>
+
+                    <div className={styles.fieldGroup}>
+                        <label className={styles.fieldLabel}>Password</label>
+                        <input
+                            id="signup-password"
+                            type="password"
+                            name="password"
+                            value={formState.password}
+                            placeholder="Min. 6 characters"
+                            onChange={handleInputChange}
+                            className={styles.fieldInput}
+                            autoComplete="new-password"
+                        />
+                    </div>
+
+                    <button
+                        id="signup-submit"
+                        type="submit"
+                        className={styles.submitBtn}
+                        disabled={loading || !!success}
+                    >
+                        {loading && <span className={styles.spinner}></span>}
+                        {loading ? 'Creating account...' : 'Create Account'}
+                    </button>
+                </form>
+
+                <div className={styles.linkRow}>
+                    Already have an account?
+                    <Link to="/">Sign in</Link>
+                </div>
+            </div>
         </div>
     )
 }
