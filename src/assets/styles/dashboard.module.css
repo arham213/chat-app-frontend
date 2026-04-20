@@ -877,6 +877,33 @@
     box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
 }
 
+/* Loading States */
+.loadingChat, .loadingState {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    width: 100%;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 14px;
+    gap: 16px;
+    flex: 1;
+}
+
+.loadingSpinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid rgba(16, 185, 129, 0.2);
+    border-top-color: #10b981;
+    border-radius: 50%;
+    animation: spinner 0.8s linear infinite;
+}
+
+@keyframes spinner {
+    to { transform: rotate(360deg); }
+}
+
 /* Responsive */
 @media (max-width: 860px) {
     .dashboard {
